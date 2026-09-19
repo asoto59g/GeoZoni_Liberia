@@ -487,7 +487,8 @@ h1 {
 }
 
 .pdf-dialog-text,
-.pdf-file-name {
+.pdf-file-name,
+.pdf-dialog-status {
   margin: 0;
   padding: 14px 16px 0;
   color: var(--muted);
@@ -499,6 +500,15 @@ h1 {
   overflow-wrap: anywhere;
   color: var(--text);
   font-weight: 750;
+}
+
+.pdf-dialog-status {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.pdf-dialog-status[hidden] {
+  display: none;
 }
 
 .pdf-dialog-actions {

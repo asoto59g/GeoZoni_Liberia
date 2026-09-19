@@ -7,6 +7,7 @@
   let latestReport = null;
   let normativeMatrix = {};
   let currentPdfUrl = "";
+  let currentPdfDataUrl = "";
   let currentPdfName = "";
   let currentPdfFile = null;
 
@@ -220,9 +221,10 @@
         }
 
         y = addNote(doc, y, config.report.disclaimer, margin, pageHeight);
-        const fileName = `informe-pot-liberia-${formatCoord(latestReport.point.lat)}-${formatCoord(latestReport.point.lon)}.pdf`.replaceAll(" ", "");
+        const fileName = `informe-pot-liberia-${formatCoordForFile(latestReport.point.lat)}-${formatCoordForFile(latestReport.point.lon)}.pdf`;
         const pdfBlob = doc.output("blob");
-        const pdfUrl = showPdfDialog(pdfBlob, fileName);
+        const pdfDataUrl = doc.output("datauristring");
+        const pdfUrl = showPdfDialog(pdfBlob, fileName, pdfDataUrl);
         if (!isMobileLike()) triggerPdfDownload(pdfUrl, fileName);
       } catch (error) {
         setStatus("No se pudo generar el PDF", getErrorMessage(error), "error");
@@ -234,30 +236,37 @@
     dom.pdfButton.addEventListener("click", downloadPdf);
 
     function setupButtons(PointClass, mercatorUtils) {
-      dom.gpsButton.addEventListener("click", () => {
+      dom.gpsButton.addEventListener("click", async () => {
         if (!navigator.geolocation) {
           setStatus("GPS no disponible", "El navegador no expone geolocalizacion.", "error");
           return;
         }
 
-        setBusy(true, "Esperando GPS...");
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const point = new PointClass({
-              longitude: position.coords.longitude,
-              latitude: position.coords.latitude,
-              spatialReference: { wkid: 4326 }
-            });
-            const mapPoint = mercatorUtils.geographicToWebMercator(point);
-            setBusy(false);
-            analyzePoint(mapPoint, "gps", mercatorUtils, Graphic);
-          },
-          (error) => {
-            setBusy(false);
-            setStatus("GPS sin respuesta", error.message || "No fue posible obtener la ubicacion.", "error");
-          },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
-        );
+        if (!window.isSecureContext) {
+          setStatus("GPS bloqueado", "La ubicacion del telefono requiere abrir la app con HTTPS.", "error");
+          return;
+        }
+
+        setBusy(true, "Buscando GPS...");
+        try {
+          const position = await getDevicePosition((accuracy) => {
+            const text = Number.isFinite(accuracy)
+              ? `GPS encontrado, afinando precision (${Math.round(accuracy)} m)...`
+              : "Reintentando GPS...";
+            setBusy(true, text);
+          });
+          const point = new PointClass({
+            longitude: position.coords.longitude,
+            latitude: position.coords.latitude,
+            spatialReference: { wkid: 4326 }
+          });
+          const mapPoint = mercatorUtils.geographicToWebMercator(point);
+          setBusy(false);
+          await analyzePoint(mapPoint, "gps", mercatorUtils, Graphic);
+        } catch (error) {
+          setBusy(false);
+          setStatus("GPS sin respuesta", getGeolocationErrorMessage(error), "error");
+        }
       });
 
       dom.clearButton.addEventListener("click", () => {
@@ -285,6 +294,7 @@
       "pdfDialog",
       "pdfDialogText",
       "pdfDialogFileName",
+      "pdfDialogStatus",
       "pdfOpenButton",
       "pdfDownloadButton",
       "pdfShareButton",
@@ -301,9 +311,7 @@
   function setupPdfDialog() {
     dom.pdfCloseButton.addEventListener("click", hidePdfDialog);
     dom.pdfOpenButton.addEventListener("click", openCurrentPdf);
-    dom.pdfDownloadButton.addEventListener("click", () => {
-      if (currentPdfUrl) triggerPdfDownload(currentPdfUrl, currentPdfName);
-    });
+    dom.pdfDownloadButton.addEventListener("click", saveCurrentPdf);
     dom.pdfShareButton.addEventListener("click", shareCurrentPdf);
     dom.pdfDialog.addEventListener("click", (event) => {
       if (event.target === dom.pdfDialog) hidePdfDialog();
@@ -314,15 +322,112 @@
     window.addEventListener("beforeunload", revokeCurrentPdfUrl);
   }
 
-  function showPdfDialog(blob, fileName) {
-    const pdfUrl = preparePdf(blob, fileName);
+  async function getDevicePosition(onProgress) {
+    try {
+      return await watchDevicePosition({
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 60000
+      }, 60000, onProgress);
+    } catch (error) {
+      if (!isRecoverableGeoError(error)) throw error;
+      if (onProgress) onProgress(null);
+      return getCurrentDevicePosition({
+        enableHighAccuracy: false,
+        maximumAge: 120000,
+        timeout: 30000
+      });
+    }
+  }
+
+  function watchDevicePosition(options, maxWait, onProgress) {
+    return new Promise((resolve, reject) => {
+      let watchId = null;
+      let resolveWithBestTimer = null;
+      let hardTimeoutTimer = null;
+      let bestPosition = null;
+      let finished = false;
+
+      const finish = (error, position) => {
+        if (finished) return;
+        finished = true;
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        if (resolveWithBestTimer) clearTimeout(resolveWithBestTimer);
+        if (hardTimeoutTimer) clearTimeout(hardTimeoutTimer);
+        if (error) reject(error);
+        else resolve(position);
+      };
+
+      resolveWithBestTimer = setTimeout(() => {
+        if (bestPosition && getAccuracy(bestPosition) <= 250) finish(null, bestPosition);
+      }, 20000);
+
+      hardTimeoutTimer = setTimeout(() => {
+        if (bestPosition) finish(null, bestPosition);
+        else finish({ code: 3, message: "Tiempo agotado esperando ubicacion GPS." });
+      }, maxWait);
+
+      try {
+        watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            if (!bestPosition || getAccuracy(position) < getAccuracy(bestPosition)) {
+              bestPosition = position;
+            }
+            const accuracy = getAccuracy(bestPosition);
+            if (onProgress) onProgress(accuracy);
+            if (accuracy <= 75) finish(null, bestPosition);
+          },
+          (error) => {
+            if (bestPosition) finish(null, bestPosition);
+            else finish(error);
+          },
+          options
+        );
+      } catch (error) {
+        finish(error);
+      }
+    });
+  }
+
+  function getCurrentDevicePosition(options) {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+  }
+
+  function getAccuracy(position) {
+    const accuracy = position?.coords?.accuracy;
+    return Number.isFinite(accuracy) ? accuracy : Infinity;
+  }
+
+  function isRecoverableGeoError(error) {
+    return error?.code === 2 || error?.code === 3;
+  }
+
+  function getGeolocationErrorMessage(error) {
+    if (!error) return "No fue posible obtener la ubicacion.";
+    if (error.code === 1) {
+      return "Permiso denegado. Active el permiso de ubicacion para este sitio en el navegador del telefono.";
+    }
+    if (error.code === 2) {
+      return "El telefono no pudo calcular la ubicacion. Revise que Ubicacion este activa y que el navegador tenga permiso.";
+    }
+    if (error.code === 3) {
+      return "El GPS tardo demasiado. Intente de nuevo al aire libre o seleccione el punto directamente en el mapa.";
+    }
+    return error.message || "No fue posible obtener la ubicacion.";
+  }
+
+  function showPdfDialog(blob, fileName, dataUrl) {
+    const pdfUrl = preparePdf(blob, fileName, dataUrl);
     const mobile = isMobileLike();
 
     dom.pdfDialogText.textContent = mobile
-      ? "En telefono el navegador puede no mostrar el aviso de descarga. Use Abrir PDF para verlo o Descargar/Compartir para guardarlo."
+      ? "En telefono se abre una vista del PDF para evitar errores de descarga del navegador. Desde esa vista puede guardar o compartir."
       : "El PDF se descargo. Tambien puede abrirlo desde esta ventana.";
     dom.pdfDialogFileName.textContent = fileName;
-    dom.pdfShareButton.hidden = !canShareCurrentPdf();
+    setPdfDialogStatus("");
+    dom.pdfShareButton.hidden = !navigator.share;
     dom.pdfDialog.hidden = false;
     dom.pdfOpenButton.focus();
     setupIcons();
@@ -333,9 +438,10 @@
     dom.pdfDialog.hidden = true;
   }
 
-  function preparePdf(blob, fileName) {
+  function preparePdf(blob, fileName, dataUrl) {
     revokeCurrentPdfUrl();
     currentPdfName = fileName;
+    currentPdfDataUrl = dataUrl || "";
     currentPdfUrl = URL.createObjectURL(blob);
     currentPdfFile = createPdfFile(blob, fileName);
     return currentPdfUrl;
@@ -344,6 +450,7 @@
   function revokeCurrentPdfUrl() {
     if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
     currentPdfUrl = "";
+    currentPdfDataUrl = "";
   }
 
   function createPdfFile(blob, fileName) {
@@ -356,9 +463,28 @@
   }
 
   function openCurrentPdf() {
-    if (!currentPdfUrl) return;
-    const opened = window.open(currentPdfUrl, "_blank", "noopener");
-    if (!opened) window.location.href = currentPdfUrl;
+    if (!currentPdfUrl && !currentPdfDataUrl) return;
+    if (isMobileLike() && currentPdfDataUrl) {
+      openPdfViewer(currentPdfUrl, currentPdfDataUrl, currentPdfName);
+      return;
+    }
+
+    const opened = window.open(currentPdfUrl, "_blank");
+    if (opened) {
+      opened.opener = null;
+      return;
+    }
+    window.location.href = currentPdfDataUrl || currentPdfUrl;
+  }
+
+  function saveCurrentPdf() {
+    if (!currentPdfUrl && !currentPdfDataUrl) return;
+    if (isMobileLike()) {
+      setPdfDialogStatus("Se abrira el PDF. Use el menu del navegador para guardarlo si no inicia una descarga directa.");
+      openCurrentPdf();
+      return;
+    }
+    triggerPdfDownload(currentPdfUrl, currentPdfName);
   }
 
   function triggerPdfDownload(url, fileName) {
@@ -373,7 +499,13 @@
   }
 
   async function shareCurrentPdf() {
-    if (!currentPdfFile || !navigator.share) return;
+    if (!navigator.share) return;
+    if (!canShareCurrentPdf()) {
+      setPdfDialogStatus("Este navegador no permite compartir archivos PDF directamente. Se abrira el PDF para guardarlo o compartirlo desde el menu del navegador.");
+      openCurrentPdf();
+      return;
+    }
+
     try {
       await navigator.share({
         title: config.report.title,
@@ -382,7 +514,7 @@
       });
     } catch (error) {
       if (error.name !== "AbortError") {
-        setStatus("No se pudo compartir el PDF", getErrorMessage(error), "error");
+        setPdfDialogStatus(`No se pudo compartir el PDF: ${getErrorMessage(error)}`);
       }
     }
   }
@@ -401,6 +533,48 @@
     const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches;
     const mobileAgent = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
     return Boolean(coarsePointer || mobileAgent);
+  }
+
+  function openPdfViewer(viewUrl, downloadUrl, fileName) {
+    const viewer = window.open("", "_blank");
+    if (!viewer) {
+      setPdfDialogStatus("El navegador bloqueo la ventana del PDF. Habilite ventanas emergentes para esta app.");
+      return;
+    }
+
+    const safeTitle = escapeHtml(fileName);
+    const safeViewUrl = escapeHtml(viewUrl || downloadUrl);
+    const safeDownloadUrl = escapeHtml(downloadUrl || viewUrl);
+    viewer.document.open();
+    viewer.document.write(`<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${safeTitle}</title>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body { display: flex; flex-direction: column; background: #f4f1eb; color: #24251f; font-family: Arial, sans-serif; }
+      header { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #d9d5c9; background: #fff; }
+      strong { min-width: 0; overflow-wrap: anywhere; font-size: 0.86rem; }
+      a { flex: 0 0 auto; padding: 8px 10px; border-radius: 8px; background: #007f78; color: #fff; font-size: 0.84rem; font-weight: 700; text-decoration: none; }
+      iframe { flex: 1 1 auto; width: 100%; min-height: 0; border: 0; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>${safeTitle}</strong>
+      <a href="${safeDownloadUrl}" download="${safeTitle}">Guardar</a>
+    </header>
+    <iframe src="${safeViewUrl}" title="PDF generado"></iframe>
+  </body>
+</html>`);
+    viewer.document.close();
+  }
+
+  function setPdfDialogStatus(message) {
+    dom.pdfDialogStatus.textContent = message;
+    dom.pdfDialogStatus.hidden = !message;
   }
 
   function createReportLayers(FeatureLayer) {
@@ -810,6 +984,11 @@
       minimumFractionDigits: 6,
       maximumFractionDigits: 6
     }).format(value);
+  }
+
+  function formatCoordForFile(value) {
+    if (!Number.isFinite(value)) return "sin-dato";
+    return value.toFixed(6).replace("-", "m").replace(".", "p");
   }
 
   function formatDate(date) {
