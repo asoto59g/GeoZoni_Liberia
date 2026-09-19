@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="pot_github.gif" alt="Pot animation">
+</p>
 # GeoZoni Liberia
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-GeoZoni_Liberia-2ea44f?logo=github)](https://asoto59g.github.io/GeoZoni_Liberia/)
