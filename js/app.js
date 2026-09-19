@@ -123,8 +123,6 @@
         }
 
         const result = entry.value;
-        if (!result.features.length) return;
-
         if (layerConfig.role === "zoning") report.zone.push(result);
         if (layerConfig.role === "cadastre") report.cadastre.push(result);
         if (layerConfig.role === "roads") report.roads.push(result);
@@ -205,7 +203,9 @@
         }
 
         y = addZoneToPdf(doc, latestReport, y, margin, pageWidth, pageHeight);
-        y = addLayerGroupToPdf(doc, "Restricciones y afectaciones espaciales", latestReport.restrictions, y, margin, pageWidth, pageHeight);
+        y = addLayerGroupToPdf(doc, "Restricciones y afectaciones espaciales", latestReport.restrictions, y, margin, pageWidth, pageHeight, {
+          includeReviewedWithoutResults: true
+        });
         y = addLayerGroupToPdf(doc, "Predio catastral intersectado", latestReport.cadastre, y, margin, pageWidth, pageHeight);
         y = addLayerGroupToPdf(doc, "Vialidad propuesta cercana", latestReport.roads, y, margin, pageWidth, pageHeight);
 
@@ -1165,22 +1165,51 @@
     return addTable(doc, y, ["Codigo", "Actividad", "Categoria", "Condiciones"], rows, margin, pageWidth);
   }
 
-  function addLayerGroupToPdf(doc, title, groups, y, margin, pageWidth, pageHeight) {
+  function addLayerGroupToPdf(doc, title, groups, y, margin, pageWidth, pageHeight, options = {}) {
     const nonEmpty = groups.filter((item) => item.features.length);
     y = addSectionTitle(doc, title, y, margin, pageHeight);
-    if (!nonEmpty.length) return addNote(doc, y, "Sin resultados.", margin, pageHeight);
 
-    const rows = [];
-    nonEmpty.forEach((group) => {
-      group.features.forEach((feature) => {
-        const detail = getAttributeRows(feature.attributes, group.fields)
-          .map(([label, value]) => `${label}: ${value}`)
-          .join("\n");
-        rows.push([group.category || "", group.title, detail || "Sin atributos descriptivos"]);
+    if (!nonEmpty.length) {
+      const emptyText = options.includeReviewedWithoutResults
+        ? "Sin hallazgos de interseccion o proximidad en las capas consultadas."
+        : "Sin resultados.";
+      y = addNote(doc, y, emptyText, margin, pageHeight);
+    } else {
+      const rows = [];
+      nonEmpty.forEach((group) => {
+        group.features.forEach((feature) => {
+          const detail = getAttributeRows(feature.attributes, group.fields)
+            .map(([label, value]) => `${label}: ${value}`)
+            .join("\n");
+          const queryMode = getLayerQueryMode(group);
+          rows.push([group.category || "", group.title, [`Consulta: ${queryMode}`, detail || "Sin atributos descriptivos"].join("\n")]);
+        });
       });
-    });
 
-    return addTable(doc, y, ["Categoria", "Capa", "Detalle"], rows, margin, pageWidth);
+      y = addTable(doc, y, ["Categoria", "Capa", "Detalle"], rows, margin, pageWidth);
+    }
+
+    if (options.includeReviewedWithoutResults) {
+      y = addReviewedWithoutResultsToPdf(doc, groups, y, margin, pageWidth, pageHeight);
+    }
+
+    return y;
+  }
+
+  function addReviewedWithoutResultsToPdf(doc, groups, y, margin, pageWidth, pageHeight) {
+    const rows = groups
+      .filter((group) => !group.features.length)
+      .map((group) => [group.category || "", group.title, getLayerQueryMode(group)]);
+
+    if (!rows.length) return y;
+    y = addSectionTitle(doc, "Capas revisadas sin hallazgo", y, margin, pageHeight);
+    return addTable(doc, y, ["Categoria", "Capa", "Consulta"], rows, margin, pageWidth);
+  }
+
+  function getLayerQueryMode(group) {
+    return group.queryDistance
+      ? `Proximidad <= ${group.queryDistance} m`
+      : "Interseccion directa";
   }
 
   function addSectionTitle(doc, title, y, margin, pageHeight) {
