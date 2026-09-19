@@ -2,8 +2,6 @@
 
 Aplicacion estatica para consultar un punto del canton de Liberia contra el Web Map publico de la pre-propuesta POT 2026 y generar un informe PDF descargable.
 
-Repositorio: `https://github.com/asoto59g/GeoZoni_Liberia`
-
 URL esperada en GitHub Pages: `https://asoto59g.github.io/GeoZoni_Liberia/`
 
 Fuente de informacion: portal de la Municipalidad de Liberia, con corte al 18 de setiembre de 2026.
