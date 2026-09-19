@@ -49,6 +49,7 @@
     cacheDom();
     setupIcons();
     setupButtons(Point, webMercatorUtils);
+    setupReportPanelToggle();
     setupPdfDialog();
     setupInAppBrowserNotice();
     loadNormativeMatrix();
@@ -299,6 +300,8 @@
       "statusTitle",
       "statusText",
       "reportContent",
+      "panelToggleButton",
+      "showReportButton",
       "busyOverlay",
       "busyText",
       "browserNotice",
@@ -318,10 +321,34 @@
     ].forEach((id) => {
       dom[id] = document.getElementById(id);
     });
+    dom.reportPanel = document.getElementById("report-panel");
   }
 
   function setupIcons() {
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  function setupReportPanelToggle() {
+    dom.panelToggleButton.addEventListener("click", () => setReportPanelCollapsed(true));
+    dom.showReportButton.addEventListener("click", () => setReportPanelCollapsed(false));
+  }
+
+  function setReportPanelCollapsed(isCollapsed) {
+    document.body.classList.toggle("report-panel-collapsed", isCollapsed);
+    dom.showReportButton.hidden = !isCollapsed;
+    dom.panelToggleButton.setAttribute("aria-expanded", String(!isCollapsed));
+    dom.showReportButton.setAttribute("aria-expanded", String(!isCollapsed));
+
+    requestAnimationFrame(() => {
+      if (view?.resize) view.resize();
+      if (!isCollapsed && isMobileLayout()) {
+        dom.reportPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  }
+
+  function isMobileLayout() {
+    return window.matchMedia("(max-width: 980px)").matches;
   }
 
   function setupPdfDialog() {

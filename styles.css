@@ -45,6 +45,10 @@ button {
   grid-template-columns: minmax(0, 1fr) 420px;
 }
 
+body.report-panel-collapsed #app-shell {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 #map-region {
   position: relative;
   min-width: 0;
@@ -86,7 +90,8 @@ button {
 }
 
 .tool-button,
-.icon-button {
+.icon-button,
+.report-toggle-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -105,6 +110,20 @@ button {
   font-weight: 650;
 }
 
+.report-toggle-button {
+  position: absolute;
+  top: 72px;
+  left: 16px;
+  z-index: 6;
+  gap: 8px;
+  padding: 0 12px;
+  font-weight: 750;
+}
+
+.report-toggle-button[hidden] {
+  display: none;
+}
+
 .tool-button.primary {
   border-color: var(--accent);
   background: var(--accent);
@@ -112,7 +131,8 @@ button {
 }
 
 .tool-button:hover,
-.icon-button:hover {
+.icon-button:hover,
+.report-toggle-button:hover {
   border-color: var(--accent);
 }
 
@@ -128,6 +148,7 @@ button {
 
 .tool-button svg,
 .icon-button svg,
+.report-toggle-button svg,
 .status-icon svg {
   width: 18px;
   height: 18px;
@@ -146,6 +167,10 @@ button {
   z-index: 5;
 }
 
+body.report-panel-collapsed #report-panel {
+  display: none;
+}
+
 .panel-header {
   display: flex;
   align-items: center;
@@ -153,6 +178,13 @@ button {
   gap: 16px;
   padding: 18px 20px 14px;
   border-bottom: 1px solid var(--line);
+}
+
+.panel-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
 }
 
 .eyebrow {
@@ -623,15 +655,34 @@ h1 {
     flex-direction: column;
   }
 
+  body.report-panel-collapsed {
+    overflow: hidden;
+  }
+
+  body.report-panel-collapsed #app-shell {
+    height: 100%;
+    min-height: 100%;
+  }
+
   #map-region {
     height: 58vh;
     min-height: 380px;
+  }
+
+  body.report-panel-collapsed #map-region {
+    height: 100vh;
+    min-height: 100vh;
   }
 
   #report-panel {
     min-height: 42vh;
     border-top: 1px solid var(--line);
     border-left: 0;
+  }
+
+  .report-toggle-button {
+    top: 68px;
+    left: 12px;
   }
 
   .toolbar {
@@ -661,6 +712,10 @@ h1 {
 @media (max-width: 520px) {
   .panel-header {
     padding: 16px 14px 12px;
+  }
+
+  .panel-actions {
+    gap: 6px;
   }
 
   .status-box,

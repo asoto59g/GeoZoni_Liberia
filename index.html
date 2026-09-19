@@ -25,6 +25,10 @@
         <div id="hearing-banner" aria-label="Fecha de audiencia publica">
           Fecha audiencia publica: 05 noviembre 2026, 5:00 p.m. - Estadio Edgardo Baltodano Briceño
         </div>
+        <button id="showReportButton" class="report-toggle-button" type="button" title="Mostrar informe" aria-controls="report-panel" aria-expanded="false" hidden>
+          <i data-lucide="eye"></i>
+          <span>Informe</span>
+        </button>
       </main>
 
       <aside id="report-panel" aria-live="polite">
@@ -33,9 +37,14 @@
             <p class="eyebrow">Municipalidad de Liberia</p>
             <h1>Consulta POT 2026</h1>
           </div>
-          <button id="pdfButton" class="icon-button" type="button" title="Descargar informe PDF" disabled>
-            <i data-lucide="file-down"></i>
-          </button>
+          <div class="panel-actions">
+            <button id="panelToggleButton" class="icon-button" type="button" title="Ocultar informe" aria-controls="report-panel" aria-expanded="true">
+              <i data-lucide="eye-off"></i>
+            </button>
+            <button id="pdfButton" class="icon-button" type="button" title="Descargar informe PDF" disabled>
+              <i data-lucide="file-down"></i>
+            </button>
+          </div>
         </header>
 
         <section id="statusBox" class="status-box">
