@@ -446,21 +446,36 @@
   }
 
   function renderNormative(norm) {
-    const permitted = listText(norm.usos_permitidos);
-    const conditional = listText(norm.usos_condicionados);
-    const prohibited = listText(norm.usos_no_permitidos);
+    const permitted = getUseItems(norm.usos_permitidos);
+    const conditional = getUseItems(norm.usos_condicionados);
+    const prohibited = getUseItems(norm.usos_no_permitidos);
     const articles = listText(norm.articulos);
 
     return `
       <h3>Usos y normativa</h3>
       <p class="note">${escapeHtml(norm.resumen || normativeMatrix.nota || "Matriz normativa pendiente de cargar.")}</p>
       <div class="meta-grid" style="margin-top: 8px;">
-        ${metric("Permitidos", permitted || "Pendiente")}
-        ${metric("Condicionados", conditional || "Pendiente")}
-        ${metric("No permitidos", prohibited || "Pendiente")}
+        ${metric("Usos permitidos", permitted.length ? `${permitted.length} actividad(es)` : "Pendiente")}
+        ${metric("Permitidos con condicion", conditional.length ? `${conditional.length} actividad(es)` : "Sin dato")}
+        ${metric("No permitidos", prohibited.length ? `${prohibited.length} actividad(es)` : "Pendiente")}
         ${metric("Articulos", articles || "Pendiente")}
       </div>
+      ${renderUseDetails("Usos permitidos", permitted, true)}
+      ${renderUseDetails("Permitidos con condicion", conditional, false)}
+      ${renderUseDetails("Usos no permitidos", prohibited, false)}
       ${norm.observaciones ? `<p class="note">${escapeHtml(norm.observaciones)}</p>` : ""}
+    `;
+  }
+
+  function renderUseDetails(title, items, open) {
+    if (!items.length) return "";
+    return `
+      <details class="use-details" ${open ? "open" : ""}>
+        <summary>${escapeHtml(title)} (${items.length})</summary>
+        <ul class="use-list">
+          ${items.map((item) => `<li>${escapeHtml(formatUseItem(item))}</li>`).join("")}
+        </ul>
+      </details>
     `;
   }
 
@@ -561,12 +576,18 @@
 
   function getNormativeEntry(attrs) {
     const zones = normativeMatrix.zonas || {};
+    const aliases = normativeMatrix.aliases || {};
     const keys = [attrs.ETIQUETA, attrs.TRANSECTO].filter(Boolean);
     for (const key of keys) {
       if (zones[key]) return zones[key];
+      if (aliases[key] && zones[aliases[key]]) return zones[aliases[key]];
       const normalized = normalizeKey(key);
+      const aliasKey = Object.keys(aliases).find((item) => normalizeKey(item) === normalized);
+      if (aliasKey && zones[aliases[aliasKey]]) return zones[aliases[aliasKey]];
       const foundKey = Object.keys(zones).find((item) => normalizeKey(item) === normalized);
       if (foundKey) return zones[foundKey];
+      const codeMatch = String(key).match(/\b(R[1-4]|T[3-6]|ZE[1-4])\b/i);
+      if (codeMatch && zones[codeMatch[1].toUpperCase()]) return zones[codeMatch[1].toUpperCase()];
     }
 
     return {
@@ -627,7 +648,25 @@
 
   function listText(items) {
     if (!Array.isArray(items) || !items.length) return "";
-    return items.join("; ");
+    return items.map((item) => typeof item === "string" ? item : formatUseItem(item)).join("; ");
+  }
+
+  function getUseItems(items) {
+    return Array.isArray(items) ? items : [];
+  }
+
+  function formatUseItem(item) {
+    if (typeof item === "string") return item;
+    if (!item || typeof item !== "object") return "";
+
+    const code = item.codigo ? `${item.codigo} ` : "";
+    const activity = item.actividad || "Actividad sin nombre";
+    const conditions = [];
+    if (item.area_m2) conditions.push(`area: ${item.area_m2}`);
+    if (item.vialidad && item.vialidad !== "-") conditions.push(`vialidad: ${item.vialidad}`);
+    if (item.condicion_adicional && item.condicion_adicional !== "-") conditions.push(item.condicion_adicional);
+    if (item.condicion_aeropuerto && item.condicion_aeropuerto !== "-") conditions.push(`aeropuerto: ${item.condicion_aeropuerto}`);
+    return `${code}${activity}${conditions.length ? ` (${conditions.join("; ")})` : ""}`;
   }
 
   function normalizeKey(value) {
@@ -698,14 +737,32 @@
     y = addSectionTitle(doc, "Usos y normativa", y, margin, pageHeight);
     y = addTable(doc, y, ["Categoria", "Detalle"], [
       ["Resumen", norm.resumen || normativeMatrix.nota || "Pendiente"],
-      ["Permitidos", listText(norm.usos_permitidos) || "Pendiente"],
-      ["Condicionados", listText(norm.usos_condicionados) || "Pendiente"],
-      ["No permitidos", listText(norm.usos_no_permitidos) || "Pendiente"],
+      ["Usos permitidos", `${getUseItems(norm.usos_permitidos).length} actividad(es)`],
+      ["Permitidos con condicion", `${getUseItems(norm.usos_condicionados).length} actividad(es)`],
+      ["Usos no permitidos", `${getUseItems(norm.usos_no_permitidos).length} actividad(es)`],
       ["Articulos", listText(norm.articulos) || "Pendiente"],
       ["Observaciones", norm.observaciones || ""]
     ], margin, pageWidth);
 
+    y = addUseTableToPdf(doc, "Usos permitidos", getUseItems(norm.usos_permitidos), y, margin, pageWidth, pageHeight);
+    y = addUseTableToPdf(doc, "Permitidos con condicion", getUseItems(norm.usos_condicionados), y, margin, pageWidth, pageHeight);
+    y = addUseTableToPdf(doc, "Usos no permitidos", getUseItems(norm.usos_no_permitidos), y, margin, pageWidth, pageHeight);
+
     return y;
+  }
+
+  function addUseTableToPdf(doc, title, items, y, margin, pageWidth, pageHeight) {
+    if (!items.length) return y;
+    y = addSectionTitle(doc, title, y, margin, pageHeight);
+    const rows = items.map((item) => [
+      item.codigo || "",
+      item.actividad || "",
+      item.categoria || "",
+      [item.area_m2 ? `Area: ${item.area_m2}` : "", item.vialidad ? `Vialidad: ${item.vialidad}` : "", item.condicion_adicional || "", item.condicion_aeropuerto ? `Aeropuerto: ${item.condicion_aeropuerto}` : ""]
+        .filter(Boolean)
+        .join("\n")
+    ]);
+    return addTable(doc, y, ["Codigo", "Actividad", "Categoria", "Condiciones"], rows, margin, pageWidth);
   }
 
   function addLayerGroupToPdf(doc, title, groups, y, margin, pageWidth, pageHeight) {

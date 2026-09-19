@@ -6,6 +6,8 @@ Repositorio: `https://github.com/asoto59g/GeoZoni_Liberia`
 
 URL esperada en GitHub Pages: `https://asoto59g.github.io/GeoZoni_Liberia/`
 
+Fuente de informacion: portal de la Municipalidad de Liberia, con corte al 18 de setiembre de 2026.
+
 ## Audiencia publica
 
 Fecha audiencia publica: 05 noviembre 2026, 5:00 p.m.  
@@ -24,9 +26,18 @@ Lugar: Estadio Edgardo Baltodano Briceño.
 - Generacion de PDF en el navegador, sin backend.
 - Matriz normativa editable en `data/normativa_transectos.json`.
 
-## Limitacion importante
+## Fuentes normativas
 
-El portal SharePoint indicado solicita inicio de sesion desde este entorno. Por eso los usos permitidos, condicionados, no permitidos y articulos quedan como plantilla editable en `data/normativa_transectos.json`. Cuando tenga los documentos oficiales, complete esa matriz y la app los incluira automaticamente en pantalla y PDF.
+La matriz `data/normativa_transectos.json` se genera desde documentos locales en `PREPROPUESTA/`:
+
+- `PREPROPUESTA/01_RESUMEN POT/PR_Lib - Tabla usos POT.pdf`
+- `PREPROPUESTA/03_PROPUESTAS/02. Reglamentos de Desarrollo Urbano/PR_Lib - 01_Reglamento de Zonificación y forma urbana.pdf`
+
+El directorio `PREPROPUESTA/` no se sube al repo porque contiene fuentes pesadas. Para regenerar la matriz:
+
+```powershell
+python scripts/extract_normativa.py
+```
 
 ## Ejecutar localmente
 
@@ -62,6 +73,7 @@ git push -u origin main
 - `js/config.js`: fuentes ArcGIS, campos, capas y etiquetas del informe.
 - `js/app.js`: mapa, consultas espaciales, GPS, render de resultados y PDF.
 - `data/normativa_transectos.json`: matriz editable de usos y normativa por zona.
+- `scripts/extract_normativa.py`: genera la matriz normativa a partir de los PDFs locales.
 
 ## Notas tecnicas
 
