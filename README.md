@@ -5,6 +5,7 @@
 ![ArcGIS](https://img.shields.io/badge/ArcGIS-Web%20Map-2c7ac3)
 ![GPS](https://img.shields.io/badge/GPS-compatible-5a5a5a)
 ![PDF](https://img.shields.io/badge/PDF-informe%20descargable-b30b00)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Aplicacion estatica para consultar un punto del canton de Liberia contra el Web Map publico de la pre-propuesta POT 2026 y generar un informe PDF descargable.
 
@@ -85,6 +86,10 @@ git push -u origin main
 - Las consultas se realizan directamente contra servicios ArcGIS REST publicos.
 - El PDF se genera con `jsPDF` y `jspdf-autotable`.
 - No almacena ubicacion ni resultados en servidor.
+
+## Licencia
+
+Este proyecto se publica bajo licencia MIT. Consulte `LICENSE`.
 
 ## Descargo
 
