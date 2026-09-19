@@ -61,6 +61,36 @@
       <span id="busyText">Consultando capas...</span>
     </div>
 
+    <div id="pdfDialog" class="pdf-dialog" role="dialog" aria-modal="true" aria-labelledby="pdfDialogTitle" hidden>
+      <div class="pdf-dialog-panel">
+        <div class="pdf-dialog-header">
+          <div>
+            <p class="eyebrow">Informe generado</p>
+            <h2 id="pdfDialogTitle">PDF listo</h2>
+          </div>
+          <button id="pdfCloseButton" class="icon-button" type="button" title="Cerrar">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <p id="pdfDialogText" class="pdf-dialog-text">El PDF fue generado correctamente.</p>
+        <p id="pdfDialogFileName" class="pdf-file-name"></p>
+        <div class="pdf-dialog-actions">
+          <button id="pdfOpenButton" class="tool-button primary" type="button">
+            <i data-lucide="external-link"></i>
+            <span>Abrir PDF</span>
+          </button>
+          <button id="pdfDownloadButton" class="tool-button" type="button">
+            <i data-lucide="download"></i>
+            <span>Descargar</span>
+          </button>
+          <button id="pdfShareButton" class="tool-button" type="button" hidden>
+            <i data-lucide="share-2"></i>
+            <span>Compartir</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>

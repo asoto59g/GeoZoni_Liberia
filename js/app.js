@@ -6,6 +6,9 @@
   let reportLayers = [];
   let latestReport = null;
   let normativeMatrix = {};
+  let currentPdfUrl = "";
+  let currentPdfName = "";
+  let currentPdfFile = null;
 
   const valueCodes = {
     P: "Permitido",
@@ -45,6 +48,7 @@
     cacheDom();
     setupIcons();
     setupButtons(Point, webMercatorUtils);
+    setupPdfDialog();
     loadNormativeMatrix();
 
     const webmap = new WebMap({
@@ -217,7 +221,11 @@
 
         y = addNote(doc, y, config.report.disclaimer, margin, pageHeight);
         const fileName = `informe-pot-liberia-${formatCoord(latestReport.point.lat)}-${formatCoord(latestReport.point.lon)}.pdf`.replaceAll(" ", "");
-        doc.save(fileName);
+        const pdfBlob = doc.output("blob");
+        const pdfUrl = showPdfDialog(pdfBlob, fileName);
+        if (!isMobileLike()) triggerPdfDownload(pdfUrl, fileName);
+      } catch (error) {
+        setStatus("No se pudo generar el PDF", getErrorMessage(error), "error");
       } finally {
         setBusy(false);
       }
@@ -273,7 +281,14 @@
       "statusText",
       "reportContent",
       "busyOverlay",
-      "busyText"
+      "busyText",
+      "pdfDialog",
+      "pdfDialogText",
+      "pdfDialogFileName",
+      "pdfOpenButton",
+      "pdfDownloadButton",
+      "pdfShareButton",
+      "pdfCloseButton"
     ].forEach((id) => {
       dom[id] = document.getElementById(id);
     });
@@ -281,6 +296,111 @@
 
   function setupIcons() {
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  function setupPdfDialog() {
+    dom.pdfCloseButton.addEventListener("click", hidePdfDialog);
+    dom.pdfOpenButton.addEventListener("click", openCurrentPdf);
+    dom.pdfDownloadButton.addEventListener("click", () => {
+      if (currentPdfUrl) triggerPdfDownload(currentPdfUrl, currentPdfName);
+    });
+    dom.pdfShareButton.addEventListener("click", shareCurrentPdf);
+    dom.pdfDialog.addEventListener("click", (event) => {
+      if (event.target === dom.pdfDialog) hidePdfDialog();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !dom.pdfDialog.hidden) hidePdfDialog();
+    });
+    window.addEventListener("beforeunload", revokeCurrentPdfUrl);
+  }
+
+  function showPdfDialog(blob, fileName) {
+    const pdfUrl = preparePdf(blob, fileName);
+    const mobile = isMobileLike();
+
+    dom.pdfDialogText.textContent = mobile
+      ? "En telefono el navegador puede no mostrar el aviso de descarga. Use Abrir PDF para verlo o Descargar/Compartir para guardarlo."
+      : "El PDF se descargo. Tambien puede abrirlo desde esta ventana.";
+    dom.pdfDialogFileName.textContent = fileName;
+    dom.pdfShareButton.hidden = !canShareCurrentPdf();
+    dom.pdfDialog.hidden = false;
+    dom.pdfOpenButton.focus();
+    setupIcons();
+    return pdfUrl;
+  }
+
+  function hidePdfDialog() {
+    dom.pdfDialog.hidden = true;
+  }
+
+  function preparePdf(blob, fileName) {
+    revokeCurrentPdfUrl();
+    currentPdfName = fileName;
+    currentPdfUrl = URL.createObjectURL(blob);
+    currentPdfFile = createPdfFile(blob, fileName);
+    return currentPdfUrl;
+  }
+
+  function revokeCurrentPdfUrl() {
+    if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
+    currentPdfUrl = "";
+  }
+
+  function createPdfFile(blob, fileName) {
+    if (typeof File === "undefined") return null;
+    try {
+      return new File([blob], fileName, { type: "application/pdf" });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function openCurrentPdf() {
+    if (!currentPdfUrl) return;
+    const opened = window.open(currentPdfUrl, "_blank", "noopener");
+    if (!opened) window.location.href = currentPdfUrl;
+  }
+
+  function triggerPdfDownload(url, fileName) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.target = "_blank";
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  async function shareCurrentPdf() {
+    if (!currentPdfFile || !navigator.share) return;
+    try {
+      await navigator.share({
+        title: config.report.title,
+        text: "Informe POT Liberia",
+        files: [currentPdfFile]
+      });
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        setStatus("No se pudo compartir el PDF", getErrorMessage(error), "error");
+      }
+    }
+  }
+
+  function canShareCurrentPdf() {
+    if (!currentPdfFile || !navigator.share) return false;
+    if (!navigator.canShare) return true;
+    try {
+      return navigator.canShare({ files: [currentPdfFile] });
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function isMobileLike() {
+    const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches;
+    const mobileAgent = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    return Boolean(coarsePointer || mobileAgent);
   }
 
   function createReportLayers(FeatureLayer) {

@@ -449,6 +449,73 @@ h1 {
   animation: spin 0.9s linear infinite;
 }
 
+.pdf-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(36, 37, 31, 0.42);
+}
+
+.pdf-dialog[hidden] {
+  display: none;
+}
+
+.pdf-dialog-panel {
+  width: min(440px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.pdf-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pdf-dialog-header h2 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+
+.pdf-dialog-text,
+.pdf-file-name {
+  margin: 0;
+  padding: 14px 16px 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.pdf-file-name {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-weight: 750;
+}
+
+.pdf-dialog-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 16px;
+}
+
+.pdf-dialog-actions .tool-button {
+  width: 100%;
+}
+
+.pdf-dialog-actions .tool-button[hidden] {
+  display: none;
+}
+
 .esri-ui .esri-widget {
   border-radius: 8px;
 }
@@ -526,6 +593,15 @@ h1 {
   }
 
   .attribute-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pdf-dialog {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .pdf-dialog-actions {
     grid-template-columns: minmax(0, 1fr);
   }
 }
