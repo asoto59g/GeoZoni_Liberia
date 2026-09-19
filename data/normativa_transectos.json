@@ -1,0 +1,140 @@
+{
+  "version": "0.1",
+  "estado": "plantilla",
+  "nota": "El SharePoint municipal indicado requiere inicio de sesion desde este entorno. Complete esta matriz con la tabla oficial de usos permitidos, condicionados y no permitidos cuando tenga acceso a los documentos fuente.",
+  "referencias_generales": [
+    "Pre-propuesta POT Liberia 2026, documentos municipales del portal SharePoint.",
+    "Capas publicas del Web Map Mapa propuesta POT 2026.",
+    "Reglamentos nacionales y municipales aplicables segun criterio oficial."
+  ],
+  "zonas": {
+    "R1 Zona de Conservación y Turismo Costero": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": "No inventar usos. Transcribir o resumir desde la matriz oficial."
+    },
+    "R1 Zona Litoral": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": "Alias usado por ETIQUETA en algunas entidades."
+    },
+    "R2 Zona Agroforestal y Turismo de Montaña": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "R3 Zona de Producción Agrícola e Integración Comunitaria": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "R4 Zona de Manejo Agroecológico y Sustentable": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "T3 Zona Suburbana": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "T4 Zona Urbana": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "T5 Zona Centro Urbano": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "T6 Zona Núcleo Urbano": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "Zona Especial  Institucional": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": "El nombre fuente contiene doble espacio."
+    },
+    "Zona Especial Institucional": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": "Alias sin doble espacio."
+    },
+    "Zona Especial Académica": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "ZE3 Zona Especial Académica": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": "Alias usado por ETIQUETA en algunas entidades."
+    },
+    "Zona Especial Aeroportuaria": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "Zona Especial Histórica": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": ""
+    },
+    "ZE1 Zona Especial Histórica": {
+      "resumen": "Pendiente de completar con matriz oficial.",
+      "usos_permitidos": [],
+      "usos_condicionados": [],
+      "usos_no_permitidos": [],
+      "articulos": [],
+      "observaciones": "Alias usado por ETIQUETA en algunas entidades."
+    }
+  }
+}

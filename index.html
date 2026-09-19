@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Consulta por punto del POT Liberia 2026 con informe PDF.">
+    <title>Consulta POT Liberia</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="app-shell">
+      <main id="map-region" aria-label="Mapa de consulta">
+        <div id="viewDiv"></div>
+        <div id="map-toolbar" class="toolbar" aria-label="Herramientas del mapa">
+          <button id="gpsButton" class="tool-button primary" type="button" title="Usar ubicacion GPS">
+            <i data-lucide="crosshair"></i>
+            <span>GPS</span>
+          </button>
+          <button id="clearButton" class="tool-button" type="button" title="Limpiar consulta">
+            <i data-lucide="rotate-ccw"></i>
+            <span>Limpiar</span>
+          </button>
+        </div>
+        <div id="hearing-banner" aria-label="Fecha de audiencia publica">
+          Fecha audiencia publica: 05 noviembre 2026, 5:00 p.m. - Estadio Edgardo Baltodano Briceño
+        </div>
+      </main>
+
+      <aside id="report-panel" aria-live="polite">
+        <header class="panel-header">
+          <div>
+            <p class="eyebrow">Municipalidad de Liberia</p>
+            <h1>Consulta POT 2026</h1>
+          </div>
+          <button id="pdfButton" class="icon-button" type="button" title="Descargar informe PDF" disabled>
+            <i data-lucide="file-down"></i>
+          </button>
+        </header>
+
+        <section id="statusBox" class="status-box">
+          <div class="status-icon"><i data-lucide="map-pin"></i></div>
+          <div>
+            <strong id="statusTitle">Seleccione un punto</strong>
+            <p id="statusText">Use el mapa o el GPS del dispositivo para generar el informe.</p>
+          </div>
+        </section>
+
+        <section id="reportContent" class="report-content empty-state">
+          <p>El resultado incluira zona/transecto, parametros urbanisticos, restricciones espaciales, predio intersectado y vialidad cercana cuando exista informacion publica disponible.</p>
+        </section>
+
+        <footer class="panel-footer">
+          <p>Informe referencial. No sustituye certificado oficial de uso de suelo ni criterio municipal.</p>
+        </footer>
+      </aside>
+    </div>
+
+    <div id="busyOverlay" class="busy-overlay" hidden>
+      <div class="spinner"></div>
+      <span id="busyText">Consultando capas...</span>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://js.arcgis.com/4.31/"></script>
+    <script src="./js/config.js"></script>
+    <script src="./js/app.js"></script>
+  </body>
+</html>
