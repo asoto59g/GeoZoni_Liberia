@@ -207,7 +207,9 @@
           includeReviewedWithoutResults: true
         });
         y = addLayerGroupToPdf(doc, "Predio catastral intersectado", latestReport.cadastre, y, margin, pageWidth, pageHeight);
-        y = addLayerGroupToPdf(doc, "Vialidad propuesta cercana", latestReport.roads, y, margin, pageWidth, pageHeight);
+        y = addLayerGroupToPdf(doc, "Vialidad propuesta cercana", latestReport.roads, y, margin, pageWidth, pageHeight, {
+          emptyText: getNearbyRoadsEmptyText(latestReport.roads)
+        });
 
         if (latestReport.errors.length) {
           y = addSectionTitle(doc, "Capas sin respuesta", y, margin, pageHeight);
@@ -780,7 +782,7 @@
       renderZoneBlock(zoneAttrs),
       renderRestrictionsBlock(report.restrictions),
       renderLayerBlock("Predio catastral intersectado", report.cadastre, "No se encontro predio catastral para el punto."),
-      renderLayerBlock("Vialidad propuesta cercana", report.roads, "No se encontro vialidad propuesta dentro del radio de consulta."),
+      renderLayerBlock("Vialidad propuesta cercana", report.roads, getNearbyRoadsEmptyText(report.roads)),
       renderErrors(report.errors)
     ].filter(Boolean);
 
@@ -1087,6 +1089,17 @@
     }).format(value);
   }
 
+  function getNearbyRoadsEmptyText(groups) {
+    const distance = getFirstQueryDistance(groups);
+    return distance
+      ? `No se encontro vialidad propuesta dentro de ${distance} m del punto consultado.`
+      : "No se encontro vialidad propuesta cercana al punto consultado.";
+  }
+
+  function getFirstQueryDistance(groups) {
+    return groups.find((group) => group.queryDistance)?.queryDistance;
+  }
+
   function formatCoordForFile(value) {
     if (!Number.isFinite(value)) return "sin-dato";
     return value.toFixed(6).replace("-", "m").replace(".", "p");
@@ -1170,9 +1183,9 @@
     y = addSectionTitle(doc, title, y, margin, pageHeight);
 
     if (!nonEmpty.length) {
-      const emptyText = options.includeReviewedWithoutResults
+      const emptyText = options.emptyText || (options.includeReviewedWithoutResults
         ? "Sin hallazgos de interseccion o proximidad en las capas consultadas."
-        : "Sin resultados.";
+        : "Sin resultados.");
       y = addNote(doc, y, emptyText, margin, pageHeight);
     } else {
       const rows = [];
