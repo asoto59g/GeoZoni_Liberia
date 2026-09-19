@@ -1,5 +1,11 @@
 # GeoZoni Liberia
 
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-GeoZoni_Liberia-2ea44f?logo=github)](https://asoto59g.github.io/GeoZoni_Liberia/)
+![HTML CSS JS](https://img.shields.io/badge/app-HTML%2FCSS%2FJS-007f78)
+![ArcGIS](https://img.shields.io/badge/ArcGIS-Web%20Map-2c7ac3)
+![GPS](https://img.shields.io/badge/GPS-compatible-5a5a5a)
+![PDF](https://img.shields.io/badge/PDF-informe%20descargable-b30b00)
+
 Aplicacion estatica para consultar un punto del canton de Liberia contra el Web Map publico de la pre-propuesta POT 2026 y generar un informe PDF descargable.
 
 URL esperada en GitHub Pages: `https://asoto59g.github.io/GeoZoni_Liberia/`
