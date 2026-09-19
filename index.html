@@ -61,6 +61,29 @@
       <span id="busyText">Consultando capas...</span>
     </div>
 
+    <div id="browserNotice" class="browser-notice" hidden>
+      <div class="browser-notice-panel">
+        <div class="browser-notice-copy">
+          <i data-lucide="alert-triangle"></i>
+          <div>
+            <strong id="browserNoticeTitle">Abra en navegador</strong>
+            <p id="browserNoticeText">Facebook puede bloquear abrir o guardar el PDF.</p>
+            <p id="browserNoticeStatus" hidden></p>
+          </div>
+        </div>
+        <div class="browser-notice-actions">
+          <button id="openExternalButton" class="tool-button primary" type="button">
+            <i data-lucide="external-link"></i>
+            <span>Abrir navegador</span>
+          </button>
+          <button id="copyLinkButton" class="tool-button" type="button">
+            <i data-lucide="copy"></i>
+            <span>Copiar enlace</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="pdfDialog" class="pdf-dialog" role="dialog" aria-modal="true" aria-labelledby="pdfDialogTitle" hidden>
       <div class="pdf-dialog-panel">
         <div class="pdf-dialog-header">

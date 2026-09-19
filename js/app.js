@@ -50,6 +50,7 @@
     setupIcons();
     setupButtons(Point, webMercatorUtils);
     setupPdfDialog();
+    setupInAppBrowserNotice();
     loadNormativeMatrix();
 
     const webmap = new WebMap({
@@ -242,6 +243,13 @@
           return;
         }
 
+        const embeddedBrowserName = getEmbeddedBrowserName();
+        if (embeddedBrowserName) {
+          setStatus("Abra en navegador", `${embeddedBrowserName} puede bloquear el GPS. Abra la app en Chrome/Safari y vuelva a tocar GPS.`, "warning");
+          showBrowserNoticeStatus("Para usar GPS desde telefono, abra esta app en Chrome, Safari o el navegador del telefono.");
+          return;
+        }
+
         if (!window.isSecureContext) {
           setStatus("GPS bloqueado", "La ubicacion del telefono requiere abrir la app con HTTPS.", "error");
           return;
@@ -291,6 +299,12 @@
       "reportContent",
       "busyOverlay",
       "busyText",
+      "browserNotice",
+      "browserNoticeTitle",
+      "browserNoticeText",
+      "browserNoticeStatus",
+      "openExternalButton",
+      "copyLinkButton",
       "pdfDialog",
       "pdfDialogText",
       "pdfDialogFileName",
@@ -320,6 +334,18 @@
       if (event.key === "Escape" && !dom.pdfDialog.hidden) hidePdfDialog();
     });
     window.addEventListener("beforeunload", revokeCurrentPdfUrl);
+  }
+
+  function setupInAppBrowserNotice() {
+    const browserName = getEmbeddedBrowserName();
+    if (!browserName) return;
+
+    dom.browserNoticeTitle.textContent = `Abra en navegador externo`;
+    dom.browserNoticeText.textContent = `${browserName} puede bloquear descargas PDF, ventanas nuevas y permisos de GPS. Para guardar el informe, abra esta app en Chrome, Safari o el navegador del telefono.`;
+    dom.browserNotice.hidden = false;
+    dom.openExternalButton.addEventListener("click", openExternalBrowser);
+    dom.copyLinkButton.addEventListener("click", copyCurrentUrl);
+    setupIcons();
   }
 
   async function getDevicePosition(onProgress) {
@@ -421,12 +447,15 @@
   function showPdfDialog(blob, fileName, dataUrl) {
     const pdfUrl = preparePdf(blob, fileName, dataUrl);
     const mobile = isMobileLike();
+    const embeddedBrowserName = getEmbeddedBrowserName();
 
-    dom.pdfDialogText.textContent = mobile
+    dom.pdfDialogText.textContent = embeddedBrowserName
+      ? `${embeddedBrowserName} bloquea guardar o abrir PDF en algunos telefonos. Use Abrir navegador o Copiar enlace y continue desde Chrome/Safari.`
+      : mobile
       ? "En telefono se abre una vista del PDF para evitar errores de descarga del navegador. Desde esa vista puede guardar o compartir."
       : "El PDF se descargo. Tambien puede abrirlo desde esta ventana.";
     dom.pdfDialogFileName.textContent = fileName;
-    setPdfDialogStatus("");
+    setPdfDialogStatus(embeddedBrowserName ? "El PDF fue generado, pero este navegador interno puede impedir abrirlo." : "");
     dom.pdfShareButton.hidden = !navigator.share;
     dom.pdfDialog.hidden = false;
     dom.pdfOpenButton.focus();
@@ -464,6 +493,11 @@
 
   function openCurrentPdf() {
     if (!currentPdfUrl && !currentPdfDataUrl) return;
+    if (getEmbeddedBrowserName()) {
+      setPdfDialogStatus("Abra la app en Chrome/Safari para abrir el PDF. Facebook bloquea esta vista en algunos telefonos.");
+      showBrowserNoticeStatus("Use Abrir navegador o Copiar enlace y genere el informe desde Chrome/Safari.");
+      return;
+    }
     if (isMobileLike() && currentPdfDataUrl) {
       openPdfViewer(currentPdfUrl, currentPdfDataUrl, currentPdfName);
       return;
@@ -479,6 +513,11 @@
 
   function saveCurrentPdf() {
     if (!currentPdfUrl && !currentPdfDataUrl) return;
+    if (getEmbeddedBrowserName()) {
+      setPdfDialogStatus("Abra la app en Chrome/Safari para guardar el PDF. El navegador interno de Facebook no permite esta descarga de forma confiable.");
+      showBrowserNoticeStatus("Copie el enlace o use Abrir navegador y repita la descarga desde Chrome/Safari.");
+      return;
+    }
     if (isMobileLike()) {
       setPdfDialogStatus("Se abrira el PDF. Use el menu del navegador para guardarlo si no inicia una descarga directa.");
       openCurrentPdf();
@@ -500,6 +539,11 @@
 
   async function shareCurrentPdf() {
     if (!navigator.share) return;
+    if (getEmbeddedBrowserName()) {
+      setPdfDialogStatus("Para compartir el PDF, abra la app en Chrome/Safari. Facebook bloquea compartir archivos desde su navegador interno.");
+      showBrowserNoticeStatus("Copie el enlace o use Abrir navegador y genere el informe de nuevo.");
+      return;
+    }
     if (!canShareCurrentPdf()) {
       setPdfDialogStatus("Este navegador no permite compartir archivos PDF directamente. Se abrira el PDF para guardarlo o compartirlo desde el menu del navegador.");
       openCurrentPdf();
@@ -533,6 +577,63 @@
     const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches;
     const mobileAgent = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
     return Boolean(coarsePointer || mobileAgent);
+  }
+
+  function getEmbeddedBrowserName() {
+    const userAgent = navigator.userAgent || "";
+    if (/Instagram/i.test(userAgent)) return "Instagram";
+    if (/FB_IAB|FBAN|FBAV|FBIOS|FB4A|FBAN\/Messenger|MessengerForiOS/i.test(userAgent)) return "Facebook";
+    if (/Line\/|Twitter|LinkedInApp|TikTok/i.test(userAgent)) return "el navegador interno";
+    return "";
+  }
+
+  async function openExternalBrowser() {
+    const url = window.location.href;
+    const userAgent = navigator.userAgent || "";
+
+    if (/Android/i.test(userAgent) && /^https?:/i.test(window.location.protocol)) {
+      const scheme = window.location.protocol.replace(":", "");
+      const intentPath = url.replace(/^https?:\/\//i, "");
+      window.location.href = `intent://${intentPath}#Intent;scheme=${scheme};package=com.android.chrome;end`;
+      showBrowserNoticeStatus("Si Chrome no se abre, use Copiar enlace y peguelo en el navegador del telefono.");
+      return;
+    }
+
+    await copyCurrentUrl();
+    showBrowserNoticeStatus("En iPhone toque el menu de Facebook y elija Abrir en Safari/Chrome. El enlace ya quedo copiado.");
+  }
+
+  async function copyCurrentUrl() {
+    const url = window.location.href;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        copyTextFallback(url);
+      }
+      showBrowserNoticeStatus("Enlace copiado. Pegelo en Chrome, Safari o el navegador del telefono.");
+    } catch (error) {
+      showBrowserNoticeStatus(`No se pudo copiar automaticamente. Copie la direccion del navegador: ${url}`);
+    }
+  }
+
+  function copyTextFallback(text) {
+    const input = document.createElement("textarea");
+    input.value = text;
+    input.setAttribute("readonly", "");
+    input.style.position = "fixed";
+    input.style.left = "-9999px";
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    input.remove();
+  }
+
+  function showBrowserNoticeStatus(message) {
+    if (!dom.browserNoticeStatus) return;
+    dom.browserNotice.hidden = false;
+    dom.browserNoticeStatus.textContent = message;
+    dom.browserNoticeStatus.hidden = !message;
   }
 
   function openPdfViewer(viewUrl, downloadUrl, fileName) {

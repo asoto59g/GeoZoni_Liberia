@@ -449,6 +449,81 @@ h1 {
   animation: spin 0.9s linear infinite;
 }
 
+.browser-notice {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  z-index: 25;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.browser-notice[hidden] {
+  display: none;
+}
+
+.browser-notice-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: min(760px, 100%);
+  padding: 12px;
+  border: 1px solid #e5bf73;
+  border-radius: 8px;
+  background: #fffaf0;
+  box-shadow: var(--shadow);
+  pointer-events: auto;
+}
+
+.browser-notice-copy {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.browser-notice-copy svg {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  color: var(--warning);
+}
+
+.browser-notice-copy strong,
+.browser-notice-copy p {
+  display: block;
+  margin: 0;
+}
+
+.browser-notice-copy strong {
+  font-size: 0.92rem;
+}
+
+.browser-notice-copy p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+#browserNoticeStatus {
+  color: var(--warning);
+  font-weight: 750;
+}
+
+#browserNoticeStatus[hidden] {
+  display: none;
+}
+
+.browser-notice-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .pdf-dialog {
   position: fixed;
   inset: 0;
@@ -604,6 +679,25 @@ h1 {
 
   .attribute-list {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .browser-notice {
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+  }
+
+  .browser-notice-panel,
+  .browser-notice-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .browser-notice-actions {
+    display: grid;
+  }
+
+  .browser-notice-actions .tool-button {
+    width: 100%;
   }
 
   .pdf-dialog {
